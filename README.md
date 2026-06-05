@@ -29,6 +29,24 @@ npm run test:e2e:install
 npm run test:e2e
 ```
 
+## E2E login (stateStorage)
+This suite includes an auth setup test that logs into:
+`https://los-fe-five.vercel.app/login`
+and saves the authenticated browser storage state to:
+`PlaywrightKavia/stateStorage/auth.json`
+
+Subsequent tests reuse that stored session via Playwright `storageState` (stateStorage).
+
+### Required environment variables
+Provide credentials via environment variables (do not hardcode credentials in tests):
+- `E2E_EMAIL`
+- `E2E_PASSWORD`
+
+Example:
+```bash
+E2E_EMAIL="user@example.com" E2E_PASSWORD="..." npm run test:e2e
+```
+
 ## Common commands
 - Headed mode:
   ```bash

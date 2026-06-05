@@ -18,6 +18,13 @@ export default defineConfig({
   reporter: process.env.CI ? 'list' : 'html',
 
   use: {
+    /* External app under test (no webServer needed). */
+    baseURL: 'https://los-fe-five.vercel.app',
+    /**
+     * Shared authenticated state file ("stateStorage").
+     * Tests can opt-in by setting `test.use({ storageState: stateStoragePath })`.
+     */
+    storageState: 'stateStorage/auth.json',
     /* Collect trace on first retry to aid debugging in CI. */
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
@@ -26,8 +33,13 @@ export default defineConfig({
 
   projects: [
     {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/
+    },
+    {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
+      use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup']
     }
   ]
 });
