@@ -1,0 +1,19 @@
+# Node / dependencies
+node_modules/
+
+# Playwright artifacts
+playwright-report/
+test-results/
+blob-report/
+
+# Common OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.file_activity_report.json
