@@ -9,10 +9,10 @@
   },
   "scripts": {
     "test": "playwright test",
-    "test:headed": "xvfb-run -a -s \"-screen 0 1920x1080x24\" playwright test --headed",
+    "test:headed": "node scripts/run-with-xvfb.cjs -- playwright test --headed",
     "test:headed:real": "playwright test --headed",
     "test:ui": "playwright test --ui",
-    "test:ui:xvfb": "xvfb-run -a -s \"-screen 0 1920x1080x24\" playwright test --ui",
+    "test:ui:xvfb": "node scripts/run-with-xvfb.cjs -- playwright test --ui",
     "install:browsers": "playwright install --with-deps chromium"
   }
 }

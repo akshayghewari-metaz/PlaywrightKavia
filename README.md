@@ -2,7 +2,7 @@
 
 This repository is a minimal Playwright test runner scaffold that supports both:
 - **Headless** runs (default; works in CI)
-- **Headed** runs in environments **without a real display** by using **Xvfb** (`xvfb-run`)
+- **Headed** runs in environments **without a real display** by using a **virtual X server (Xvfb)**
 
 ## Why headed mode fails by default in this environment
 
@@ -11,6 +11,11 @@ If you run Playwright with `--headed` (or `headless: false`) inside a typical co
 - `Missing X server or $DISPLAY`
 
 That means there is no display server available. The fix is to run with a virtual display.
+
+This repo includes a **repo-controlled wrapper** (`scripts/run-with-xvfb.cjs`) that:
+- Uses `xvfb-run` if available
+- Otherwise starts `Xvfb` directly
+- Otherwise fails with a clear “install Xvfb” message
 
 ## Setup
 
@@ -33,12 +38,21 @@ npm run install:browsers
 npm test
 ```
 
-## Run tests in headed mode (virtual display via Xvfb)
+## Run tests in headed mode (works without a real display)
 
-Use this in environments that do not provide a real X server:
+IMPORTANT: Do **not** run `npm test -- --headed` or `npx playwright test --headed` in this environment.
+Those commands bypass the Xvfb wrapper and can still fail with `Missing X server or $DISPLAY`.
+
+Use the repo script instead:
 
 ```bash
 npm run test:headed
+```
+
+## Run Playwright UI mode (works without a real display)
+
+```bash
+npm run test:ui:xvfb
 ```
 
 ## Run tests in headed mode (real display required)
@@ -49,25 +63,6 @@ Only use this if you are on a machine/session that already has a working X serve
 npm run test:headed:real
 ```
 
-## Run Playwright UI mode (virtual display via Xvfb)
-
-```bash
-npm run test:ui:xvfb
-```
-
-## If headed still fails
-
-1) Confirm you are using the Xvfb-backed headed script (`npm run test:headed`) and not the real-display one (`npm run test:headed:real`).
-
-2) Ensure Playwright browsers are installed:
-
-```bash
-npm run install:browsers
-```
-
-3) If you still see missing libraries, re-run the install step above; it uses `--with-deps` to install OS-level dependencies.
-
 ## Hard limitation (important)
 
-`xvfb-run` provides a **virtual** display. It enables headed mode execution, but you won't see a browser window on your local screen unless you additionally set up GUI forwarding (X11 forwarding) or a VNC/RDP server.
-"""
+Xvfb provides a **virtual** display. It enables headed mode execution, but you won’t see a browser window on your local screen unless you additionally set up GUI forwarding (X11 forwarding) or a VNC/RDP server.
