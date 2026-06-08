@@ -7,5 +7,5 @@ test('has title', async ({ page }) => {
 
 test('get started link exists', async ({ page }) => {
   await page.goto('https://example.com/');
-  await expect(page.getByRole('link', { name: 'More information...' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Learn more' })).toBeVisible();
 });
