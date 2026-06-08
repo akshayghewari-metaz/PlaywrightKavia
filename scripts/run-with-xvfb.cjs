@@ -6,7 +6,12 @@
  * Why this exists:
  * - Playwright headed mode requires an X server ($DISPLAY).
  * - In many CI/container environments there is no display.
- * - `xvfb-run` is not always installed; this script falls back to invoking `Xvfb` directly if possible.
+ *
+ * Design:
+ * - If a *usable* DISPLAY exists => run the command normally.
+ * - Otherwise, provide a deterministic virtual display on :99.
+ *   We prefer launching Xvfb directly because it is simpler/more deterministic than xvfb-run
+ *   in minimal environments. If Xvfb is missing but xvfb-run exists, we fall back to xvfb-run.
  *
  * Usage:
  *   node scripts/run-with-xvfb.cjs -- <command> [args...]
@@ -26,8 +31,7 @@ function which(cmd) {
 function hasUsableDisplay(env = process.env) {
   if (!env.DISPLAY || env.DISPLAY.trim().length === 0) return false;
 
-  // If xdpyinfo exists, use it to validate that DISPLAY points to a *working* X server.
-  // This avoids false positives where DISPLAY is set but unusable (common in containers).
+  // If xdpyinfo exists, validate DISPLAY points to a working X server.
   if (which('xdpyinfo')) {
     const res = spawnSync('xdpyinfo', [], { stdio: 'ignore', env });
     return res.status === 0;
@@ -41,7 +45,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForDisplay(env, { timeoutMs = 4000, intervalMs = 200 } = {}) {
+async function waitForDisplay(env, { timeoutMs = 5000, intervalMs = 200 } = {}) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (hasUsableDisplay(env)) return true;
@@ -52,10 +56,15 @@ async function waitForDisplay(env, { timeoutMs = 4000, intervalMs = 200 } = {}) 
 
 function parseArgs(argv) {
   const idx = argv.indexOf('--');
-  if (idx === -1 || idx === argv.length - 1) {
-    return null;
-  }
+  if (idx === -1 || idx === argv.length - 1) return null;
   return argv.slice(idx + 1);
+}
+
+async function runChild(cmdArgs, env) {
+  const child = spawn(cmdArgs[0], cmdArgs.slice(1), { stdio: 'inherit', env });
+  return await new Promise((resolve) => {
+    child.on('exit', (code) => resolve(code ?? 1));
+  });
 }
 
 async function main() {
@@ -65,50 +74,23 @@ async function main() {
     process.exit(2);
   }
 
-  // If the caller already has a *usable* display, just run the command.
-  // (DISPLAY can be set but broken; in that case we should still use Xvfb.)
   if (hasUsableDisplay(process.env)) {
-    const child = spawn(cmdArgs[0], cmdArgs.slice(1), { stdio: 'inherit' });
-    child.on('exit', (code) => process.exit(code ?? 1));
-    return;
+    process.exit(await runChild(cmdArgs, process.env));
   }
+
+  const display = ':99';
+  const xvfbEnv = { ...process.env, DISPLAY: display };
 
   if (process.env.DISPLAY && process.env.DISPLAY.trim().length > 0) {
     console.warn(
-      `[run-with-xvfb] DISPLAY is set to "${process.env.DISPLAY}", but it does not appear to be usable. Falling back to Xvfb.`
+      `[run-with-xvfb] DISPLAY is set to "${process.env.DISPLAY}", but it does not appear usable. Starting Xvfb on ${display}.`
     );
+  } else {
+    console.log(`[run-with-xvfb] No usable DISPLAY detected. Starting Xvfb on ${display}.`);
   }
 
-  // Prefer xvfb-run when available (it manages DISPLAY + cleanup for us).
-  if (which('xvfb-run')) {
-    // In some environments, `xvfb-run` can fail to produce a working $DISPLAY even with `-a`.
-    // To make this deterministic, we select a known display ourselves and validate that it works.
-    const display = ':99';
-    const xvfbEnv = { ...process.env, DISPLAY: display };
-    const xvfbArgs = [
-      '-a',
-      '--server-num',
-      display.replace(':', ''),
-      '-s',
-      '-screen 0 1920x1080x24 -ac +extension RANDR',
-      ...cmdArgs,
-    ];
-
-    // If xdpyinfo exists, we can preflight by starting Xvfb via xvfb-run and checking DISPLAY.
-    // If not, we still run, but we at least ensure DISPLAY is set for the child.
-    const child = spawn('xvfb-run', xvfbArgs, { stdio: 'inherit', env: xvfbEnv });
-
-    // Best-effort validation (does not block the child if validation tooling is unavailable).
-    // If validation fails quickly (common "Missing X server/$DISPLAY"), the process will exit anyway.
-    await waitForDisplay(xvfbEnv).catch(() => false);
-
-    child.on('exit', (code) => process.exit(code ?? 1));
-    return;
-  }
-
-  // Fallback: start Xvfb directly if present.
+  // Prefer Xvfb directly if present (more deterministic than xvfb-run).
   if (which('Xvfb')) {
-    const display = ':99';
     const xvfb = spawn(
       'Xvfb',
       [
@@ -119,23 +101,22 @@ async function main() {
         '-ac',
         '+extension',
         'RANDR',
+        // Avoid TCP listening; use only local socket.
+        '-nolisten',
+        'tcp'
       ],
       { stdio: 'inherit' }
     );
 
-    // Give Xvfb time to come up and validate that DISPLAY is usable.
-    const ok = await waitForDisplay({ ...process.env, DISPLAY: display }, { timeoutMs: 4000, intervalMs: 200 });
+    const ok = await waitForDisplay(xvfbEnv);
 
-    // If Xvfb exited immediately, fail with a clear message.
     if (xvfb.exitCode !== null) {
       console.error('[run-with-xvfb] Xvfb exited immediately and cannot provide a virtual display.');
-      console.error('[run-with-xvfb] Ensure Xvfb is installed and functional in this environment.');
       process.exit(xvfb.exitCode || 1);
     }
 
     if (!ok) {
       console.error('[run-with-xvfb] Xvfb started, but $DISPLAY did not become usable in time.');
-      console.error('[run-with-xvfb] This usually means the X server cannot start in this environment.');
       try {
         xvfb.kill('SIGTERM');
       } catch {
@@ -143,11 +124,6 @@ async function main() {
       }
       process.exit(1);
     }
-
-    const child = spawn(cmdArgs[0], cmdArgs.slice(1), {
-      stdio: 'inherit',
-      env: { ...process.env, DISPLAY: display },
-    });
 
     const cleanup = () => {
       try {
@@ -157,36 +133,32 @@ async function main() {
       }
     };
 
-    child.on('exit', (code) => {
-      cleanup();
-      process.exit(code ?? 1);
-    });
-
-    child.on('error', (err) => {
-      console.error('Failed to start child process:', err);
-      cleanup();
-      process.exit(1);
-    });
-
-    process.on('SIGINT', () => {
-      cleanup();
-      process.exit(130);
-    });
-    process.on('SIGTERM', () => {
-      cleanup();
-      process.exit(143);
-    });
-
-    return;
+    const code = await runChild(cmdArgs, xvfbEnv);
+    cleanup();
+    process.exit(code);
   }
 
-  console.error('Headed Playwright requires an X server, but no $DISPLAY is set.');
-  console.error('Also, neither `xvfb-run` nor `Xvfb` was found in this environment.');
+  // Fallback to xvfb-run if Xvfb isn't available but wrapper is.
+  if (which('xvfb-run')) {
+    const xvfbArgs = [
+      '-a',
+      '--server-num',
+      display.replace(':', ''),
+      '-s',
+      '-screen 0 1920x1080x24 -ac +extension RANDR -nolisten tcp',
+      ...cmdArgs
+    ];
+    const code = await runChild(['xvfb-run', ...xvfbArgs], xvfbEnv);
+    process.exit(code);
+  }
+
+  console.error('Headed Playwright requires an X server, but no usable $DISPLAY is available.');
+  console.error('Also, neither `Xvfb` nor `xvfb-run` was found in this environment.');
   console.error('');
-  console.error('Repo-specific fix: install Xvfb (Debian/Ubuntu):');
+  console.error('Repo guidance: install Xvfb (Debian/Ubuntu):');
   console.error('  sudo apt-get update -y && sudo apt-get install -y xvfb');
   console.error('');
-  console.error('Then run headed mode via the repo wrapper (do NOT call `playwright test --headed` directly):');
+  console.error('Then run headed mode via:');
   console.error('  npm run test:headed');
   process.exit(1);
 }

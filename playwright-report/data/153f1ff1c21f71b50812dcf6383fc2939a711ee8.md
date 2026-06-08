@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: example.spec.ts >> get started link exists
-- Location: tests/example.spec.ts:8:5
+- Name: example.spec.ts >> has title
+- Location: tests/example.spec.ts:3:5
 
 # Error details
 

@@ -9,10 +9,14 @@
   },
   "scripts": {
     "test": "playwright test",
+
     "test:headed": "node scripts/run-with-xvfb.cjs -- playwright test --headed",
     "test:headed:real": "playwright test --headed",
+
     "test:ui": "playwright test --ui",
     "test:ui:xvfb": "node scripts/run-with-xvfb.cjs -- playwright test --ui",
-    "install:browsers": "playwright install --with-deps chromium"
+
+    "install:browsers": "node scripts/install-browsers.cjs",
+    "install:browsers:with-deps": "node scripts/install-browsers.cjs --with-deps"
   }
 }

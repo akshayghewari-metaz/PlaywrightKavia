@@ -1,21 +1,19 @@
 # PlaywrightKavia
 
 This repository is a minimal Playwright test runner scaffold that supports both:
+
 - **Headless** runs (default; works in CI)
 - **Headed** runs in environments **without a real display** by using a **virtual X server (Xvfb)**
 
 ## Why headed mode fails by default in this environment
 
-If you run Playwright with `--headed` (or `headless: false`) inside a typical container/CI environment, Chromium will fail with:
+If you run Playwright with `--headed` (or `headless: false`) inside a typical container/CI environment, Chromium can fail with:
 
 - `Missing X server or $DISPLAY`
 
 That means there is no display server available. The fix is to run with a virtual display.
 
-This repo includes a **repo-controlled wrapper** (`scripts/run-with-xvfb.cjs`) that:
-- Uses `xvfb-run` if available
-- Otherwise starts `Xvfb` directly
-- Otherwise fails with a clear “install Xvfb” message
+This repo includes a **repo-controlled wrapper** (`scripts/run-with-xvfb.cjs`) that starts Xvfb on a known display and runs Playwright with `DISPLAY` set.
 
 ## Setup
 
@@ -26,11 +24,24 @@ cd PlaywrightKavia
 npm install
 ```
 
-Install Chromium + OS deps (recommended):
+### Install browsers (important)
+
+In this environment, Playwright may be configured to look for browsers under `/ms-playwright` via `PLAYWRIGHT_BROWSERS_PATH`.
+If browsers are not installed there, you may see:
+
+- `Executable doesn't exist at /ms-playwright/...`
+
+Recommended install:
 
 ```bash
-npm run install:browsers
+npm run install:browsers:with-deps
 ```
+
+If your environment expects `/ms-playwright`, set:
+
+- `PLAYWRIGHT_BROWSERS_PATH=/ms-playwright` (see `.env.example`)
+
+Then run the install script above again.
 
 ## Run tests (headless)
 
@@ -38,10 +49,10 @@ npm run install:browsers
 npm test
 ```
 
-## Run tests in headed mode (works without a real display)
+## Run tests in headed mode (reliable in environments without a real display)
 
-IMPORTANT: Do **not** run `npm test -- --headed` or `npx playwright test --headed` in this environment.
-Those commands bypass the Xvfb wrapper and can still fail with `Missing X server or $DISPLAY`.
+IMPORTANT: Do **not** run `npx playwright test --headed` directly in this environment.
+That bypasses the Xvfb wrapper and can fail with `Missing X server or $DISPLAY`.
 
 Use the repo script instead:
 
@@ -49,7 +60,7 @@ Use the repo script instead:
 npm run test:headed
 ```
 
-## Run Playwright UI mode (works without a real display)
+## Run Playwright UI mode (virtual display)
 
 ```bash
 npm run test:ui:xvfb
