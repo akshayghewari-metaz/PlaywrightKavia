@@ -38,7 +38,15 @@ npm test
 Use this in environments that do not provide a real X server:
 
 ```bash
-npm run test:headed:xvfb
+npm run test:headed
+```
+
+## Run tests in headed mode (real display required)
+
+Only use this if you are on a machine/session that already has a working X server and `$DISPLAY` set:
+
+```bash
+npm run test:headed:real
 ```
 
 ## Run Playwright UI mode (virtual display via Xvfb)
@@ -49,7 +57,7 @@ npm run test:ui:xvfb
 
 ## If headed still fails
 
-1) Confirm you are using the Xvfb scripts (`*:xvfb`) and not plain `--headed`.
+1) Confirm you are using the Xvfb-backed headed script (`npm run test:headed`) and not the real-display one (`npm run test:headed:real`).
 
 2) Ensure Playwright browsers are installed:
 
