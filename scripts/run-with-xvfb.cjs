@@ -23,6 +23,20 @@ function which(cmd) {
   return res.status === 0;
 }
 
+function hasUsableDisplay() {
+  if (!process.env.DISPLAY || process.env.DISPLAY.trim().length === 0) return false;
+
+  // If xdpyinfo exists, use it to validate that DISPLAY points to a *working* X server.
+  // This avoids false positives where DISPLAY is set but unusable (common in containers).
+  if (which('xdpyinfo')) {
+    const res = spawnSync('xdpyinfo', [], { stdio: 'ignore', env: process.env });
+    return res.status === 0;
+  }
+
+  // If we cannot validate, conservatively assume the display is usable if set.
+  return true;
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -42,11 +56,18 @@ async function main() {
     process.exit(2);
   }
 
-  // If the caller already has a display, just run the command.
-  if (process.env.DISPLAY && process.env.DISPLAY.trim().length > 0) {
+  // If the caller already has a *usable* display, just run the command.
+  // (DISPLAY can be set but broken; in that case we should still use Xvfb.)
+  if (hasUsableDisplay()) {
     const child = spawn(cmdArgs[0], cmdArgs.slice(1), { stdio: 'inherit' });
     child.on('exit', (code) => process.exit(code ?? 1));
     return;
+  }
+
+  if (process.env.DISPLAY && process.env.DISPLAY.trim().length > 0) {
+    console.warn(
+      `[run-with-xvfb] DISPLAY is set to "${process.env.DISPLAY}", but it does not appear to be usable. Falling back to Xvfb.`
+    );
   }
 
   // Prefer xvfb-run when available (it manages DISPLAY + cleanup for us).
@@ -81,6 +102,13 @@ async function main() {
 
     // Give Xvfb a moment to come up.
     await sleep(300);
+
+    // If Xvfb exited immediately, fail with a clear message.
+    if (xvfb.exitCode !== null) {
+      console.error('[run-with-xvfb] Xvfb exited immediately and cannot provide a virtual display.');
+      console.error('[run-with-xvfb] Ensure Xvfb is installed and functional in this environment.');
+      process.exit(xvfb.exitCode || 1);
+    }
 
     const child = spawn(cmdArgs[0], cmdArgs.slice(1), {
       stdio: 'inherit',
@@ -124,7 +152,7 @@ async function main() {
   console.error('Repo-specific fix: install Xvfb (Debian/Ubuntu):');
   console.error('  sudo apt-get update -y && sudo apt-get install -y xvfb');
   console.error('');
-  console.error('Then run:');
+  console.error('Then run headed mode via the repo wrapper (do NOT call `playwright test --headed` directly):');
   console.error('  npm run test:headed');
   process.exit(1);
 }
