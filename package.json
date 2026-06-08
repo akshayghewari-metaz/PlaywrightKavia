@@ -4,18 +4,15 @@
   "private": true,
   "description": "Minimal Playwright test runner scaffold with optional headed (Xvfb) execution for headless Linux environments.",
   "devDependencies": {
-    "@playwright/test": "^1.45.0",
+    "@playwright/test": "^1.60.0",
     "typescript": "^5.5.0"
   },
   "scripts": {
     "test": "playwright test",
-
     "test:headed": "node scripts/run-with-xvfb.cjs -- playwright test --headed",
     "test:headed:real": "playwright test --headed",
-
     "test:ui": "playwright test --ui",
     "test:ui:xvfb": "node scripts/run-with-xvfb.cjs -- playwright test --ui",
-
     "install:browsers": "node scripts/install-browsers.cjs",
     "install:browsers:with-deps": "node scripts/install-browsers.cjs --with-deps"
   }
