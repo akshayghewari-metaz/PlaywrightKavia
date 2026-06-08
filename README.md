@@ -66,6 +66,32 @@ npm run test:headed
 npm run test:ui:xvfb
 ```
 
+## View the Playwright HTML report (important)
+
+After a test run, Playwright writes the HTML report to:
+
+- `PlaywrightKavia/playwright-report/index.html`
+
+In many environments, you **cannot** just open that file in a browser directly, and you also should not try to browse to `http://0.0.0.0:<port>`.
+
+### Recommended: start the report server
+
+```bash
+cd PlaywrightKavia
+npm run report:show
+```
+
+This starts a server bound to `0.0.0.0:9323` (so it can be reachable in containerized setups).
+
+Then open:
+
+- `http://127.0.0.1:9323` (if you are on the same machine)
+- OR the environment/preview URL that maps to this container and port
+
+If you see `ECONNREFUSED 0.0.0.0:9323`, it typically means:
+- no server is running on that port, or
+- you tried to browse to `0.0.0.0` (bind address) instead of a real host like `127.0.0.1`.
+
 ## Run tests in headed mode (real display required)
 
 Only use this if you are on a machine/session that already has a working X server and `$DISPLAY` set:
