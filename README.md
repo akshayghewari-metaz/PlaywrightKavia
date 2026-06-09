@@ -81,16 +81,25 @@ cd PlaywrightKavia
 npm run report:show
 ```
 
-This starts a server bound to `0.0.0.0:9323` (so it can be reachable in containerized setups).
+This starts a server bound to `0.0.0.0:<port>`.
+
+- In **Kavia preview**, the script will automatically use the environment `PORT` (typically `3001`), because that is the only port the preview system exposes.
+- Locally (without `PORT` set), it defaults to `9323`.
 
 Then open:
 
 - `http://127.0.0.1:9323` (if you are on the same machine)
-- OR the environment/preview URL that maps to this container and port
+- OR the environment/preview URL that maps to this container and port (Kavia preview)
 
 If you see `ECONNREFUSED 0.0.0.0:9323`, it typically means:
 - no server is running on that port, or
 - you tried to browse to `0.0.0.0` (bind address) instead of a real host like `127.0.0.1`.
+
+### Kavia preview checklist
+
+1. Ensure you have a report (run `npm test` at least once).
+2. Start the server: `npm run report:show`
+3. Open the **PlaywrightKavia** preview URL (port `3001`) and you should see the HTML report.
 
 ## Run tests in headed mode (real display required)
 

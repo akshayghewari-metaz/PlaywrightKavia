@@ -18,7 +18,9 @@
 const { spawn } = require('node:child_process');
 
 function parseArgs(argv) {
-  const out = { host: '0.0.0.0', port: '9323' };
+  // In Kavia preview, only the container's allocated PORT is reachable externally.
+  // Default to that when available; otherwise keep the local-friendly default (9323).
+  const out = { host: '0.0.0.0', port: process.env.PORT || '9323' };
 
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
@@ -50,7 +52,7 @@ async function main() {
   if (args.help) {
     console.log('Usage: node scripts/show-report.cjs [--host <host>] [--port <port>]');
     console.log('');
-    console.log('Defaults: --host 0.0.0.0 --port 9323');
+    console.log(`Defaults: --host 0.0.0.0 --port ${process.env.PORT || '9323'} (uses PORT env var if set)`);
     process.exit(0);
   }
 
