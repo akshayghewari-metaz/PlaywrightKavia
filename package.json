@@ -13,6 +13,7 @@
     "test:headed:real": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:ui:xvfb": "node scripts/run-with-xvfb.cjs -- playwright test --ui",
+    "show-report": "node scripts/show-report.cjs",
     "report:show": "node scripts/show-report.cjs",
     "install:browsers": "node scripts/install-browsers.cjs",
     "install:browsers:with-deps": "node scripts/install-browsers.cjs --with-deps"
