@@ -9,10 +9,19 @@ test.describe('navigation', () => {
     await expect(page.getByRole('heading', { name: 'Example Domain' })).toBeVisible();
 
     // Click the only link on the page and ensure we navigate away.
-    const moreInfoLink = page.getByRole('link', { name: /more information/i });
+    // NOTE: example.com link text has historically changed (e.g., "More information" -> "Learn more"),
+    // so prefer a robust href-based locator with a name-based fallback.
+    const hrefLink = page.locator('a[href*="iana.org/domains/example"]');
+    const nameFallbackLink = page.getByRole('link', { name: /learn more|more information/i });
+    const moreInfoLink = (await hrefLink.count()) > 0 ? hrefLink.first() : nameFallbackLink;
+
+    await expect(moreInfoLink).toBeVisible();
     await expect(moreInfoLink).toHaveAttribute('href', /iana\.org/i);
 
-    await moreInfoLink.click();
+    await Promise.all([
+      page.waitForNavigation(),
+      moreInfoLink.click()
+    ]);
 
     // The target page can change over time; assert stable signals:
     // - we left example.com
