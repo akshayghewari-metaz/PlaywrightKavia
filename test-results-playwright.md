@@ -64,3 +64,24 @@ Artifacts:
 - Passed: 1
 - Failed: 1
 - Skipped: 0
+
+### Run 5 (re-run after navigation test fix)
+Command:
+- CI=true npm test -- --reporter=list
+
+Result:
+- Running 2 tests using 2 workers
+- ✓ [chromium] tests/example.spec.ts:4:3 › baseline › can launch browser and open a page
+- ✘ [chromium] tests/navigation.spec.ts:4:3 › navigation › can follow the More information link and reach an IANA page
+- 1 failed
+- 1 passed (~13.3s)
+
+Failure details:
+- File/line: `tests/navigation.spec.ts:40:8`
+- Error: `expect(received).toContain(expected)` (expected substring `"iana"`)
+- Received string: `"example domains\nexample domains"`
+
+Artifacts:
+- Screenshot: `test-results/navigation-navigation-can--f501c-link-and-reach-an-IANA-page-chromium/test-failed-1.png`
+- Video: `test-results/navigation-navigation-can--f501c-link-and-reach-an-IANA-page-chromium/video.webm`
+- Error context: `test-results/navigation-navigation-can--f501c-link-and-reach-an-IANA-page-chromium/error-context.md`
