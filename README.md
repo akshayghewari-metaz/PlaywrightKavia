@@ -52,16 +52,17 @@ After running the tests, open the generated Playwright HTML report with:
 npm run report
 ```
 
-This project uses:
+This project uses an environment-safe wrapper around:
 
 ```bash
-playwright show-report --host 0.0.0.0 --port 9323 playwright-report
+npx playwright show-report --host 0.0.0.0 --port 9323 --no-open playwright-report
 ```
 
 Why this matters:
-- `npx playwright show-report` defaults to `localhost:9323`
+- Playwright may still print or try to open `http://localhost:9323` even when the server is bound to `0.0.0.0`
 - in this environment, `localhost` may point to the container itself rather than the externally reachable preview/session URL
-- binding to `0.0.0.0` makes the report server reachable through the environment's forwarded link/port handling
+- binding to `0.0.0.0` makes the report server reachable through the environment's forwarded link/port handling, but the URL you should actually open is the container preview / forwarded URL for port `9323`
+- the `npm run report` script disables auto-open and prints this reminder so you do not follow the misleading localhost URL
 
 If you are running purely on your own machine and want the default local-only binding, you can use:
 
