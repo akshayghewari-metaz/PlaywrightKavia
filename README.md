@@ -36,6 +36,7 @@ npm run test:e2e
   ```bash
   npm run test:e2e:headed
   ```
+  This repository runs headed Playwright tests through `xvfb-run` so they work in CI/container environments that do not have a native X server. Running plain `playwright test --headed` directly in this environment fails with `Missing X server or $DISPLAY`.
 - UI mode:
   ```bash
   npm run test:e2e:ui
@@ -44,6 +45,20 @@ npm run test:e2e
   ```bash
   npm run test:e2e:debug
   ```
+
+## Headed mode in this environment
+- `npm run test:e2e:headed` uses `xvfb-run -a playwright test --headed`
+- this requires the system package that provides `xvfb-run` (typically Xvfb) to be available in the runtime image
+- in environments where a real desktop display server is available, you can still run Playwright headed directly if desired
+
+If you see an error like:
+
+```text
+Looks like you launched a headed browser without having a XServer running.
+Missing X server or $DISPLAY
+```
+
+use the provided `npm run test:e2e:headed` script instead of calling `playwright test --headed` directly.
 
 ## Open the HTML report
 After running the tests, open the generated Playwright HTML report with:
