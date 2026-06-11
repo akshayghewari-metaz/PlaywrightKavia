@@ -45,11 +45,24 @@ npm run test:e2e
   ```bash
   npm run test:e2e:debug
   ```
+- Trace-for-debug (best alternative to interactive UI here):
+  ```bash
+  npm run test:e2e:trace:on
+  ```
 
 ## Headed mode in this environment
 - `npm run test:e2e:headed` uses `xvfb-run -a playwright test --headed`
 - this requires the system package that provides `xvfb-run` (typically Xvfb) to be available in the runtime image
 - in environments where a real desktop display server is available, you can still run Playwright headed directly if desired
+
+## Important: why UI/debug/headed don’t “open” here
+This environment does not provide a desktop GUI that can be displayed in your local browser session.
+Even when Playwright runs with `--headed`, `--ui`, or `PWDEBUG=1` (and we wrap these in `xvfb-run`),
+the windows are created inside the container and are not visible to you.
+
+Practical debugging approach in this environment:
+- Use **trace**, **video**, and **screenshots** (these are viewable artifacts).
+- Use the **HTML report server** and open it through the environment’s **`/proxy/<port>/`** URL.
 
 If you see an error like:
 
@@ -59,6 +72,22 @@ Missing X server or $DISPLAY
 ```
 
 use the provided `npm run test:e2e:headed` script instead of calling `playwright test --headed` directly.
+
+## Debugging with trace (recommended here)
+1) Run with trace enabled:
+```bash
+npm run test:e2e:trace:on
+```
+
+2) Open the trace:
+- Locally (on a machine with a GUI): download the `test-results/**/trace.zip` and run:
+  ```bash
+  npx playwright show-trace trace.zip
+  ```
+- In this environment: traces still get generated under `test-results/**/trace.zip`, but the trace viewer UI itself is also a GUI app. Prefer reviewing:
+  - video (`test-results/**/video.webm`)
+  - screenshots (`test-results/**/test-failed-*.png`)
+  - HTML report (see below)
 
 ## Open the HTML report
 After running the tests, open the generated Playwright HTML report with:

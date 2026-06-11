@@ -8,12 +8,14 @@
     "test": "playwright test",
     "test:e2e": "playwright test",
     "test:e2e:headed": "xvfb-run -a playwright test --headed",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:debug": "PWDEBUG=1 playwright test",
-    "report": "playwright show-report --host 0.0.0.0",
-    "report:local": "playwright show-report --host localhost --port 9324 playwright-report",
+    "test:e2e:ui": "xvfb-run -a playwright test --ui",
+    "test:e2e:debug": "xvfb-run -a env PWDEBUG=1 playwright test",
+    "test:e2e:trace:on": "playwright test --trace=on",
+    "trace:show": "playwright show-trace test-results/**/trace.zip",
+    "report": "playwright show-report --host 0.0.0.0 --port 9324 --no-open playwright-report",
+    "report:local": "playwright show-report --host localhost --port 9324 --no-open playwright-report",
     "test:e2e:install": "playwright install --with-deps chromium",
-    "codegen": "playwright codegen"
+    "codegen": "xvfb-run -a playwright codegen"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.0"
