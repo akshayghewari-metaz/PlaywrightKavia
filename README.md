@@ -45,6 +45,30 @@ npm run test:e2e
   npm run test:e2e:debug
   ```
 
+## Open the HTML report
+After running the tests, open the generated Playwright HTML report with:
+
+```bash
+npm run report
+```
+
+This project uses:
+
+```bash
+playwright show-report --host 0.0.0.0 --port 9323 playwright-report
+```
+
+Why this matters:
+- `npx playwright show-report` defaults to `localhost:9323`
+- in this environment, `localhost` may point to the container itself rather than the externally reachable preview/session URL
+- binding to `0.0.0.0` makes the report server reachable through the environment's forwarded link/port handling
+
+If you are running purely on your own machine and want the default local-only binding, you can use:
+
+```bash
+npm run report:local
+```
+
 ## Project structure
 - `playwright.config.ts` — Playwright configuration
 - `tests/` — E2E/spec tests (example smoke test included)
