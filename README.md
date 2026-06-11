@@ -60,9 +60,15 @@ npx playwright show-report --host 0.0.0.0 --port 9323 --no-open playwright-repor
 
 Why this matters:
 - Playwright may still print or try to open `http://localhost:9323` even when the server is bound to `0.0.0.0`
-- in this environment, `localhost` may point to the container itself rather than the externally reachable preview/session URL
-- binding to `0.0.0.0` makes the report server reachable through the environment's forwarded link/port handling, but the URL you should actually open is the container preview / forwarded URL for port `9323`
-- the `npm run report` script disables auto-open and prints this reminder so you do not follow the misleading localhost URL
+- in this Kavia environment, `localhost` points to the container itself (not your browser), so it will not be reachable from outside
+- binding to `0.0.0.0` makes the report server reachable through the environment's forwarded link/port handling, but the URL you should actually open is the forwarded **`/proxy/9323/`** URL
+- the `npm run report` script disables auto-open and prints a reminder so you do not follow the misleading localhost URL
+
+Open the report in your browser at:
+
+- `https://vscode-internal-25803-beta.beta01.cloud.kavia.ai/proxy/9323/`
+
+(In general, the pattern is: your session base URL + `/proxy/9323/`.)
 
 If you are running purely on your own machine and want the default local-only binding, you can use:
 
