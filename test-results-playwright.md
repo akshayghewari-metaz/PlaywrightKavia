@@ -1,87 +1,64 @@
-# PlaywrightKavia - Playwright Test Execution Report
+# Playwright Headed Test Run Report
 
-## Runs
+Command executed:
+- `npm run test:e2e:headed` (script: `xvfb-run -a playwright test --headed`)
 
-### Run 1 (initial)
-Command:
-- npm test -- --reporter=list
+Date:
+- 2026-06-17
 
-Result:
-- Did not successfully invoke Playwright runner in this environment.
-- Output included: `error: unknown command 'test'`
+## Summary (latest run)
 
-Notes:
-- Suspected environment/tooling shim interference. Proceeded with explicit dependency install + `npx playwright test`.
-
-### Run 2 (after npm install, before browser install)
-Command:
-- CI=true npx playwright test --reporter=list
-
-Result:
-- 1 test failed
-
-Failure:
-- `Error: browserType.launch: Executable doesn't exist at /ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-linux64/chrome-headless-shell`
-- Playwright recommended: `npx playwright install`
-
-Fix applied:
-- `npx playwright install --with-deps chromium`
-
-### Run 3 (final)
-Command:
-- CI=true npx playwright test --reporter=list
-
-Result:
-- Running 1 test using 1 worker
-- ✓ [chromium] tests/example.spec.ts: baseline › can launch browser and open a page
-- 1 passed (1.7s)
-
-### Run 4 (current)
-Command:
-- npm ci
-- CI=true npx playwright test --reporter=list
-
-Result:
-- Running 2 tests using 2 workers
-- ✓ [chromium] tests/example.spec.ts:4:3 › baseline › can launch browser and open a page
-- ✘ [chromium] tests/navigation.spec.ts:4:3 › navigation › can follow the More information link and reach an IANA page
-- 1 failed
-- 1 passed (6.7s)
-
-Failure details:
-- File/line: `tests/navigation.spec.ts:13:32`
-- Error: `expect(locator).toHaveAttribute(expected) failed` / `element(s) not found`
-- Locator: `getByRole('link', { name: /more information/i })`
-- Note: example.com link text is currently **"Learn more"**, so the locator does not resolve.
-
-Artifacts:
-- Screenshot: `test-results/navigation-navigation-can--f501c-link-and-reach-an-IANA-page-chromium/test-failed-1.png`
-- Video: `test-results/navigation-navigation-can--f501c-link-and-reach-an-IANA-page-chromium/video.webm`
-- Error context: `test-results/navigation-navigation-can--f501c-link-and-reach-an-IANA-page-chromium/error-context.md`
-
-## Summary
 - Total tests: 2
 - Passed: 1
 - Failed: 1
 - Skipped: 0
+- Duration: ~14.1s
 
-### Run 5 (re-run after navigation test fix)
-Command:
-- CI=true npm test -- --reporter=list
+## Environment / Setup Notes
 
-Result:
-- Running 2 tests using 2 workers
-- ✓ [chromium] tests/example.spec.ts:4:3 › baseline › can launch browser and open a page
-- ✘ [chromium] tests/navigation.spec.ts:4:3 › navigation › can follow the More information link and reach an IANA page
-- 1 failed
-- 1 passed (~13.3s)
+### Initial failure (before rerun)
+The first attempt to run headed tests failed because the Chromium executable was missing:
 
-Failure details:
-- File/line: `tests/navigation.spec.ts:40:8`
-- Error: `expect(received).toContain(expected)` (expected substring `"iana"`)
-- Received string: `"example domains\nexample domains"`
+- Error: `Executable doesn't exist at /ms-playwright/chromium-1223/chrome-linux64/chrome`
+
+Fix applied (non-interactive CI mode):
+- `CI=true npx playwright install --with-deps chromium`
+
+After installing the browser binaries, the tests were re-run.
+
+## Detailed Results (latest run)
+
+### PASS
+- `tests/example.spec.ts:4:3` — `baseline` — `can launch browser and open a page`
+
+### FAIL
+- `tests/navigation.spec.ts:4:3` — `navigation` — `can follow the More information link and reach an IANA page`
+
+Failure:
+- `expect(received).toContain(expected)`
+- Expected substring: `iana`
+- Received string: `example domains\nexample domains`
+- Failure location: `tests/navigation.spec.ts:40:8`
+- Timeout occurred while waiting in `expect.poll` (10s timeout configured; error mentions predicate timeout)
 
 Artifacts:
 - Screenshot: `test-results/navigation-navigation-can--f501c-link-and-reach-an-IANA-page-chromium/test-failed-1.png`
 - Video: `test-results/navigation-navigation-can--f501c-link-and-reach-an-IANA-page-chromium/video.webm`
 - Error context: `test-results/navigation-navigation-can--f501c-link-and-reach-an-IANA-page-chromium/error-context.md`
+
+## Analysis / Hypothesis
+
+The failing test uses:
+
+- `await Promise.all([ page.waitForNavigation(), moreInfoLink.click() ]);`
+
+This can be unreliable if the click triggers a navigation pattern that Playwright does not classify as a traditional navigation event (or if timing causes `waitForNavigation()` to miss the event). The observed page content implies we did not reach the intended IANA content.
+
+## Recommendation for next agent
+
+Update `tests/navigation.spec.ts` to wait on a more deterministic signal, for example:
+- `await moreInfoLink.click();`
+- `await page.waitForURL(/iana\.org/);`
+- or `await expect(page).toHaveURL(/iana\.org\/domains\/example/);`
+
+Optionally relax content assertion to reduce flakiness from external page changes and focus on URL-based validation.
