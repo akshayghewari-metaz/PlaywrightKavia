@@ -18,25 +18,14 @@ test.describe('navigation', () => {
     await expect(moreInfoLink).toBeVisible();
     await expect(moreInfoLink).toHaveAttribute('href', /iana\.org/i);
 
-    await Promise.all([
-      page.waitForNavigation(),
-      moreInfoLink.click()
-    ]);
+    await Promise.all([page.waitForNavigation(), moreInfoLink.click()]);
 
-    // The target page can change over time; assert stable signals:
+    // The target page content can change over time; assert stable signals:
     // - we left example.com
-    // - the new page includes IANA in either title or main heading.
+    // - we ended up on the iana.org hostname
+    //
+    // Using hostname avoids brittle assertions on localized/variable page text.
     await expect(page).not.toHaveURL(/example\.com/);
-
-    await expect
-      .poll(
-        async () => {
-          const title = await page.title();
-          const h1 = (await page.locator('h1').first().textContent()) ?? '';
-          return `${title}\n${h1}`.toLowerCase();
-        },
-        { timeout: 10_000 }
-      )
-      .toContain('iana');
+    await expect(page).toHaveURL((url) => url.hostname === 'iana.org', { timeout: 10_000 });
   });
 });
