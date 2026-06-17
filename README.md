@@ -18,6 +18,9 @@ Run this once per environment (or whenever Playwright updates):
 npm run test:e2e:install
 ```
 
+Note: this repo also runs `playwright install --with-deps chromium` automatically on `npm install` via `postinstall` to avoid the common CI failure:
+`Executable doesn't exist at .../ms-playwright/...` when browsers have not been downloaded yet.
+
 Note: The base runtime image often already contains Playwright + Chromium at the infrastructure level, but the project still pins `@playwright/test` and provides an explicit install script for consistency.
 
 ## Run tests
@@ -113,6 +116,8 @@ Open the report in your browser at:
 
 - `<your-session-base-url>/proxy/9324/` (when you run `npm run report` manually)
 - `<your-session-base-url>/proxy/9323/` (when using the container preview, which runs the report server on the container port)
+
+Avoid running `npx playwright show-report` without `--port` in this environment: by default it tries port **9323** and may fail with `EADDRINUSE`.
 
 (In general, the pattern is: your session base URL + `/proxy/<port>/`.)
 

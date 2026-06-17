@@ -5,6 +5,7 @@
   "description": "Playwright baseline test suite scaffold (Kavia).",
   "type": "module",
   "scripts": {
+    "postinstall": "playwright install --with-deps chromium",
     "test": "playwright test",
     "test:e2e": "playwright test",
     "test:e2e:headed": "xvfb-run -a playwright test --headed",

@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: navigation.spec.ts >> navigation >> can follow the More information link and reach an IANA page
-- Location: tests/navigation.spec.ts:4:3
+- Name: example.spec.ts >> baseline >> can launch browser and open a page
+- Location: tests/example.spec.ts:4:3
 
 # Error details
 
