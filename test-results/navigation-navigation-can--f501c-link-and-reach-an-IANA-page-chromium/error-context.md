@@ -12,14 +12,12 @@
 # Error details
 
 ```
-Error: expect(received).toContain(expected) // indexOf
+Error: expect(page).toHaveURL(expected) failed
 
-Expected substring: "iana"
-Received string:    "example domains
-example domains"
+Expected: predicate to succeed
+Received: "https://www.iana.org/help/example-domains"
+Timeout:  10000ms
 
-Call Log:
-- Timeout 10000ms exceeded while waiting on the predicate
 ```
 
 # Page snapshot
@@ -170,28 +168,17 @@ Call Log:
   18 |     await expect(moreInfoLink).toBeVisible();
   19 |     await expect(moreInfoLink).toHaveAttribute('href', /iana\.org/i);
   20 | 
-  21 |     await Promise.all([
-  22 |       page.waitForNavigation(),
-  23 |       moreInfoLink.click()
-  24 |     ]);
-  25 | 
-  26 |     // The target page can change over time; assert stable signals:
-  27 |     // - we left example.com
-  28 |     // - the new page includes IANA in either title or main heading.
-  29 |     await expect(page).not.toHaveURL(/example\.com/);
-  30 | 
-  31 |     await expect
-  32 |       .poll(
-  33 |         async () => {
-  34 |           const title = await page.title();
-  35 |           const h1 = (await page.locator('h1').first().textContent()) ?? '';
-  36 |           return `${title}\n${h1}`.toLowerCase();
-  37 |         },
-  38 |         { timeout: 10_000 }
-  39 |       )
-> 40 |       .toContain('iana');
-     |        ^ Error: expect(received).toContain(expected) // indexOf
-  41 |   });
-  42 | });
-  43 | 
+  21 |     await Promise.all([page.waitForNavigation(), moreInfoLink.click()]);
+  22 | 
+  23 |     // The target page content can change over time; assert stable signals:
+  24 |     // - we left example.com
+  25 |     // - we ended up on the iana.org hostname
+  26 |     //
+  27 |     // Using hostname avoids brittle assertions on localized/variable page text.
+  28 |     await expect(page).not.toHaveURL(/example\.com/);
+> 29 |     await expect(page).toHaveURL((url) => url.hostname === 'iana.org', { timeout: 10_000 });
+     |                        ^ Error: expect(page).toHaveURL(expected) failed
+  30 |   });
+  31 | });
+  32 | 
 ```

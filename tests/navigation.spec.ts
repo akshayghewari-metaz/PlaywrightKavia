@@ -26,6 +26,6 @@ test.describe('navigation', () => {
     //
     // Using hostname avoids brittle assertions on localized/variable page text.
     await expect(page).not.toHaveURL(/example\.com/);
-    await expect(page).toHaveURL((url) => url.hostname === 'iana.org', { timeout: 10_000 });
+    await expect(page).toHaveURL((url) => /^(www\.)?iana\.org$/i.test(url.hostname), { timeout: 10_000 });
   });
 });
